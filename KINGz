@@ -1,5 +1,5 @@
-    _G.CashHub = {}
-    local C = _G.CashHub
+    _G.KINGzHUB = {}
+    local C = _G.KINGzHUB
 
     -- Services
     C.Players = game:GetService("Players")
