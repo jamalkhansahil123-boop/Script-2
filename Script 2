@@ -4,22 +4,72 @@ local RunService = game:GetService("RunService")
 local player = Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
 
-local autoHit = true
+local autoDuel = false
+local autoHit = false
+
+-- GUI
+local screenGui = Instance.new("ScreenGui")
+screenGui.Parent = player.PlayerGui
+screenGui.ResetOnSpawn = false
+
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 200, 0, 120)
+frame.Position = UDim2.new(0.5, -100, 0.5, -60)
+frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+frame.Parent = screenGui
+
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0, 30)
+title.BackgroundTransparency = 1
+title.Text = "Auto Script"
+title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.Parent = frame
+
+local duelButton = Instance.new("TextButton")
+duelButton.Size = UDim2.new(1, -10, 0, 35)
+duelButton.Position = UDim2.new(0, 5, 0, 35)
+duelButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+duelButton.Text = "Auto Duel: OFF"
+duelButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+duelButton.Parent = frame
+
+local hitButton = Instance.new("TextButton")
+hitButton.Size = UDim2.new(1, -10, 0, 35)
+hitButton.Position = UDim2.new(0, 5, 0, 75)
+hitButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+hitButton.Text = "Auto Hit: OFF"
+hitButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+hitButton.Parent = frame
+
+duelButton.MouseButton1Click:Connect(function()
+    autoDuel = not autoDuel
+    duelButton.Text = autoDuel and "Auto Duel: ON" or "Auto Duel: OFF"
+    duelButton.BackgroundColor3 = autoDuel and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
+end)
+
+hitButton.MouseButton1Click:Connect(function()
+    autoHit = not autoHit
+    hitButton.Text = autoHit and "Auto Hit: ON" or "Auto Hit: OFF"
+    hitButton.BackgroundColor3 = autoHit and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
+end)
 
 RunService.Heartbeat:Connect(function()
-    if autoHit then
-        for _, enemy in pairs(workspace:GetChildren()) do
-            if enemy:IsA("Model") and enemy ~= character then
-                local humanoid = enemy:FindFirstChild("Humanoid")
-                local rootPart = enemy:FindFirstChild("HumanoidRootPart")
-                if humanoid and humanoid.Health > 0 and rootPart then
-                    local distance = (character.HumanoidRootPart.Position - rootPart.Position).Magnitude
-                    if distance < 10 then
-                        -- Hit the enemy
-                        local tool = character:FindFirstChildWhichIsA("Tool")
-                        if tool then
-                            local handle = tool:FindFirstChild("Handle")
-                            if handle then
+    character = player.Character
+    if not character then return end
+    local myRoot = character:FindFirstChild("HumanoidRootPart")
+    if not myRoot then return end
+
+    if autoDuel or autoHit then
+        for _, otherPlayer in pairs(Players:GetPlayers()) do
+            if otherPlayer ~= player then
+                local otherCharacter = otherPlayer.Character
+                if otherCharacter then
+                    local rootPart = otherCharacter:FindFirstChild("HumanoidRootPart")
+                    if rootPart then
+                        local distance = (myRoot.Position - rootPart.Position).Magnitude
+                        if distance < 15 then
+                            local tool = character:FindFirstChildWhichIsA("Tool")
+                            if tool then
                                 tool:Activate()
                             end
                         end
