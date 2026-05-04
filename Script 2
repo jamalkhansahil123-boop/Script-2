@@ -5,13 +5,15 @@ local UserInputService = game:GetService("UserInputService")
 local player = Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
 
-local autoDuel = false
-local autoHit = false
-local autoLeft = false
-local autoRight = false
-local autoBat = false
-local instaPickup = false
-local speed = 55
+local settings = {
+    autoDuel = false,
+    holdAutoDuel = false,
+    autoSteal = false,
+    aimBat = false,
+    aim = false,
+    autoPlay = false,
+    side = "RIGHT"
+}
 
 -- GUI
 local screenGui = Instance.new("ScreenGui")
@@ -19,14 +21,14 @@ screenGui.Parent = player.PlayerGui
 screenGui.ResetOnSpawn = false
 
 local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 200, 0, 330)
-frame.Position = UDim2.new(0.5, -100, 0.5, -165)
-frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+frame.Size = UDim2.new(0, 220, 0, 420)
+frame.Position = UDim2.new(0.5, -110, 0.5, -210)
+frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 frame.Active = true
 frame.Parent = screenGui
 
 local frameCorner = Instance.new("UICorner")
-frameCorner.CornerRadius = UDim.new(0, 10)
+frameCorner.CornerRadius = UDim.new(0, 12)
 frameCorner.Parent = frame
 
 -- Dragging
@@ -63,100 +65,123 @@ UserInputService.InputChanged:Connect(function(input)
     end
 end)
 
+-- Title
 local title = Instance.new("TextLabel")
-title.Size = UDim2.new(1, 0, 0, 30)
+title.Size = UDim2.new(1, 0, 0, 40)
 title.BackgroundTransparency = 1
-title.Text = "⠿ Auto Script"
+title.Text = "SOFKA DUELS"
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.TextSize = 18
+title.Font = Enum.Font.GothamBold
 title.Parent = frame
 
-local function makeButton(text, posY)
-    local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(0, 180, 0, 40)
-    btn.Position = UDim2.new(0, 10, 0, posY)
-    btn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    btn.Text = text .. ": OFF"
-    btn.TextColor3 = Color3.fromRGB(255, 0, 0)
-    btn.Parent = frame
+-- Choose Side
+local sideLabel = Instance.new("TextLabel")
+sideLabel.Size = UDim2.new(1, 0, 0, 20)
+sideLabel.Position = UDim2.new(0, 0, 0, 45)
+sideLabel.BackgroundTransparency = 1
+sideLabel.Text = "CHOOSE SIDE"
+sideLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
+sideLabel.TextSize = 12
+sideLabel.Font = Enum.Font.GothamBold
+sideLabel.Parent = frame
 
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 8)
-    corner.Parent = btn
+local rightBtn = Instance.new("TextButton")
+rightBtn.Size = UDim2.new(0, 90, 0, 30)
+rightBtn.Position = UDim2.new(0, 10, 0, 68)
+rightBtn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+rightBtn.Text = "RIGHT"
+rightBtn.TextColor3 = Color3.fromRGB(0, 0, 0)
+rightBtn.Font = Enum.Font.GothamBold
+rightBtn.TextSize = 13
+rightBtn.Parent = frame
+local rc = Instance.new("UICorner") rc.CornerRadius = UDim.new(0, 8) rc.Parent = rightBtn
 
-    return btn
-end
+local leftBtn = Instance.new("TextButton")
+leftBtn.Size = UDim2.new(0, 90, 0, 30)
+leftBtn.Position = UDim2.new(0, 115, 0, 68)
+leftBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+leftBtn.Text = "LEFT"
+leftBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+leftBtn.Font = Enum.Font.GothamBold
+leftBtn.TextSize = 13
+leftBtn.Parent = frame
+local lc = Instance.new("UICorner") lc.CornerRadius = UDim.new(0, 8) lc.Parent = leftBtn
 
-local duelButton = makeButton("Auto Duel", 35)
-local hitButton = makeButton("Auto Hit", 82)
-local leftButton = makeButton("Auto Left", 129)
-local rightButton = makeButton("Auto Right", 176)
-local batButton = makeButton("Auto Bat", 223)
-local pickupButton = makeButton("Insta Pickup", 270)
-
-local function toggleButton(btn, state)
-    btn.Text = btn.Text:gsub(": %a+", state and ": ON" or ": OFF")
-    btn.BackgroundColor3 = state and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 255, 255)
-end
-
-duelButton.MouseButton1Click:Connect(function()
-    autoDuel = not autoDuel
-    toggleButton(duelButton, autoDuel)
+rightBtn.MouseButton1Click:Connect(function()
+    settings.side = "RIGHT"
+    rightBtn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    rightBtn.TextColor3 = Color3.fromRGB(0, 0, 0)
+    leftBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    leftBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 end)
 
-hitButton.MouseButton1Click:Connect(function()
-    autoHit = not autoHit
-    toggleButton(hitButton, autoHit)
+leftBtn.MouseButton1Click:Connect(function()
+    settings.side = "LEFT"
+    leftBtn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    leftBtn.TextColor3 = Color3.fromRGB(0, 0, 0)
+    rightBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    rightBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 end)
 
-leftButton.MouseButton1Click:Connect(function()
-    autoLeft = not autoLeft
-    if autoLeft then autoRight = false toggleButton(rightButton, false) end
-    toggleButton(leftButton, autoLeft)
-end)
+-- Toggle buttons
+local function makeToggle(text, posY, settingKey)
+    local row = Instance.new("Frame")
+    row.Size = UDim2.new(1, -20, 0, 40)
+    row.Position = UDim2.new(0, 10, 0, posY)
+    row.BackgroundTransparency = 1
+    row.Parent = frame
 
-rightButton.MouseButton1Click:Connect(function()
-    autoRight = not autoRight
-    if autoRight then autoLeft = false toggleButton(leftButton, false) end
-    toggleButton(rightButton, autoRight)
-end)
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(0.7, 0, 1, 0)
+    label.BackgroundTransparency = 1
+    label.Text = text
+    label.TextColor3 = Color3.fromRGB(255, 255, 255)
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Font = Enum.Font.Gotham
+    label.TextSize = 14
+    label.Parent = row
 
-batButton.MouseButton1Click:Connect(function()
-    autoBat = not autoBat
-    toggleButton(batButton, autoBat)
-end)
+    local toggleBg = Instance.new("Frame")
+    toggleBg.Size = UDim2.new(0, 44, 0, 24)
+    toggleBg.Position = UDim2.new(1, -44, 0.5, -12)
+    toggleBg.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+    toggleBg.Parent = row
+    local tbg = Instance.new("UICorner") tbg.CornerRadius = UDim.new(1, 0) tbg.Parent = toggleBg
 
-pickupButton.MouseButton1Click:Connect(function()
-    instaPickup = not instaPickup
-    toggleButton(pickupButton, instaPickup)
-end)
+    local circle = Instance.new("Frame")
+    circle.Size = UDim2.new(0, 18, 0, 18)
+    circle.Position = UDim2.new(0, 3, 0.5, -9)
+    circle.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    circle.Parent = toggleBg
+    local cc = Instance.new("UICorner") cc.CornerRadius = UDim.new(1, 0) cc.Parent = circle
 
-local function getClosestEnemy()
-    local closest = nil
-    local closestDist = math.huge
-    character = player.Character
-    if not character then return end
-    local myRoot = character:FindFirstChild("HumanoidRootPart")
-    if not myRoot then return end
+    local togBtn = Instance.new("TextButton")
+    togBtn.Size = UDim2.new(1, 0, 1, 0)
+    togBtn.BackgroundTransparency = 1
+    togBtn.Text = ""
+    togBtn.Parent = toggleBg
 
-    for _, otherPlayer in pairs(Players:GetPlayers()) do
-        if otherPlayer ~= player then
-            local otherCharacter = otherPlayer.Character
-            if otherCharacter then
-                local rootPart = otherCharacter:FindFirstChild("HumanoidRootPart")
-                local humanoid = otherCharacter:FindFirstChild("Humanoid")
-                if rootPart and humanoid and humanoid.Health > 0 then
-                    local dist = (myRoot.Position - rootPart.Position).Magnitude
-                    if dist < closestDist then
-                        closestDist = dist
-                        closest = otherCharacter
-                    end
-                end
-            end
+    togBtn.MouseButton1Click:Connect(function()
+        settings[settingKey] = not settings[settingKey]
+        if settings[settingKey] then
+            toggleBg.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+            circle.Position = UDim2.new(1, -21, 0.5, -9)
+        else
+            toggleBg.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+            circle.Position = UDim2.new(0, 3, 0.5, -9)
         end
-    end
-    return closest
+    end)
 end
 
+makeToggle("Auto Duel", 110, "autoDuel")
+makeToggle("Hold Auto Duel", 155, "holdAutoDuel")
+makeToggle("Auto Steal", 200, "autoSteal")
+makeToggle("Aim Bat", 245, "aimBat")
+makeToggle("Aim", 290, "aim")
+makeToggle("Auto Play", 335, "autoPlay")
+
+-- Logic
 RunService.Heartbeat:Connect(function()
     character = player.Character
     if not character then return end
@@ -164,37 +189,7 @@ RunService.Heartbeat:Connect(function()
     local humanoid = character:FindFirstChild("Humanoid")
     if not myRoot or not humanoid then return end
 
-    humanoid.WalkSpeed = speed
-
-    if autoLeft then
-        myRoot.CFrame = myRoot.CFrame * CFrame.new(-1, 0, 0)
-    end
-
-    if autoRight then
-        myRoot.CFrame = myRoot.CFrame * CFrame.new(1, 0, 0)
-    end
-
-    if autoBat then
-        local enemy = getClosestEnemy()
-        if enemy then
-            local enemyRoot = enemy:FindFirstChild("HumanoidRootPart")
-            if enemyRoot then
-                local distance = (myRoot.Position - enemyRoot.Position).Magnitude
-                if distance > 5 then
-                    humanoid.WalkSpeed = 25
-                    humanoid:MoveTo(enemyRoot.Position)
-                else
-                    humanoid.WalkSpeed = speed
-                    local tool = character:FindFirstChildWhichIsA("Tool")
-                    if tool then
-                        tool:Activate()
-                    end
-                end
-            end
-        end
-    end
-
-    if autoDuel or autoHit then
+    if settings.autoDuel or settings.holdAutoDuel then
         for _, otherPlayer in pairs(Players:GetPlayers()) do
             if otherPlayer ~= player then
                 local otherCharacter = otherPlayer.Character
@@ -204,9 +199,10 @@ RunService.Heartbeat:Connect(function()
                         local distance = (myRoot.Position - rootPart.Position).Magnitude
                         if distance < 15 then
                             local tool = character:FindFirstChildWhichIsA("Tool")
-                            if tool then
-                                tool:Activate()
-                            end
+                            if tool then tool:Activate() end
+                        end
+                        if settings.aimBat or settings.aim then
+                            myRoot.CFrame = CFrame.lookAt(myRoot.Position, rootPart.Position)
                         end
                     end
                 end
@@ -214,25 +210,18 @@ RunService.Heartbeat:Connect(function()
         end
     end
 
-    if instaPickup then
+    if settings.autoPlay then
+        if settings.side == "RIGHT" then
+            myRoot.CFrame = myRoot.CFrame * CFrame.new(1, 0, 0)
+        else
+            myRoot.CFrame = myRoot.CFrame * CFrame.new(-1, 0, 0)
+        end
+    end
+
+    if settings.autoSteal then
         for _, item in pairs(workspace:GetDescendants()) do
             if item:IsA("RemoteEvent") and item.Name:lower():find("pick") then
                 item:FireServer()
-            end
-        end
-
-        for _, item in pairs(workspace:GetChildren()) do
-            if item:IsA("Model") and item ~= character then
-                local rootPart = item:FindFirstChild("HumanoidRootPart") or item:FindFirstChildWhichIsA("BasePart")
-                if rootPart then
-                    local distance = (myRoot.Position - rootPart.Position).Magnitude
-                    if distance < 10 then
-                        local pickupRemote = item:FindFirstChild("PickUp") or item:FindFirstChild("Pickup") or item:FindFirstChild("Collect")
-                        if pickupRemote and pickupRemote:IsA("RemoteEvent") then
-                            pickupRemote:FireServer()
-                        end
-                    end
-                end
             end
         end
     end
