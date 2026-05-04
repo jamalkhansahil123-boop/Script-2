@@ -1,1 +1,31 @@
-loadstring(game:HttpGet("https://api.luarmor.net/files/v4/loaders/387a5df3b561f6821c25654316d0e352.lua"))()
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+
+local player = Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+
+local autoHit = true
+
+RunService.Heartbeat:Connect(function()
+    if autoHit then
+        for _, enemy in pairs(workspace:GetChildren()) do
+            if enemy:IsA("Model") and enemy ~= character then
+                local humanoid = enemy:FindFirstChild("Humanoid")
+                local rootPart = enemy:FindFirstChild("HumanoidRootPart")
+                if humanoid and humanoid.Health > 0 and rootPart then
+                    local distance = (character.HumanoidRootPart.Position - rootPart.Position).Magnitude
+                    if distance < 10 then
+                        -- Hit the enemy
+                        local tool = character:FindFirstChildWhichIsA("Tool")
+                        if tool then
+                            local handle = tool:FindFirstChild("Handle")
+                            if handle then
+                                tool:Activate()
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+end)
