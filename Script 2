@@ -1,11 +1,17 @@
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
 
 local player = Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
 
 local autoDuel = false
 local autoHit = false
+local autoLeft = false
+local autoRight = false
+local autoBat = false
+local instaPickup = false
+local speed = 55
 
 -- GUI
 local screenGui = Instance.new("ScreenGui")
@@ -13,51 +19,180 @@ screenGui.Parent = player.PlayerGui
 screenGui.ResetOnSpawn = false
 
 local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 200, 0, 120)
-frame.Position = UDim2.new(0.5, -100, 0.5, -60)
+frame.Size = UDim2.new(0, 200, 0, 330)
+frame.Position = UDim2.new(0.5, -100, 0.5, -165)
 frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+frame.Active = true
 frame.Parent = screenGui
+
+local frameCorner = Instance.new("UICorner")
+frameCorner.CornerRadius = UDim.new(0, 10)
+frameCorner.Parent = frame
+
+-- Dragging
+local dragging, dragInput, dragStart, startPos
+
+frame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = frame.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+
+frame.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        dragInput = input
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        local delta = input.Position - dragStart
+        frame.Position = UDim2.new(
+            startPos.X.Scale,
+            startPos.X.Offset + delta.X,
+            startPos.Y.Scale,
+            startPos.Y.Offset + delta.Y
+        )
+    end
+end)
 
 local title = Instance.new("TextLabel")
 title.Size = UDim2.new(1, 0, 0, 30)
 title.BackgroundTransparency = 1
-title.Text = "Auto Script"
+title.Text = "⠿ Auto Script"
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
 title.Parent = frame
 
-local duelButton = Instance.new("TextButton")
-duelButton.Size = UDim2.new(1, -10, 0, 35)
-duelButton.Position = UDim2.new(0, 5, 0, 35)
-duelButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
-duelButton.Text = "Auto Duel: OFF"
-duelButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-duelButton.Parent = frame
+local function makeButton(text, posY)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(0, 180, 0, 40)
+    btn.Position = UDim2.new(0, 10, 0, posY)
+    btn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    btn.Text = text .. ": OFF"
+    btn.TextColor3 = Color3.fromRGB(255, 0, 0)
+    btn.Parent = frame
 
-local hitButton = Instance.new("TextButton")
-hitButton.Size = UDim2.new(1, -10, 0, 35)
-hitButton.Position = UDim2.new(0, 5, 0, 75)
-hitButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
-hitButton.Text = "Auto Hit: OFF"
-hitButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-hitButton.Parent = frame
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 8)
+    corner.Parent = btn
+
+    return btn
+end
+
+local duelButton = makeButton("Auto Duel", 35)
+local hitButton = makeButton("Auto Hit", 82)
+local leftButton = makeButton("Auto Left", 129)
+local rightButton = makeButton("Auto Right", 176)
+local batButton = makeButton("Auto Bat", 223)
+local pickupButton = makeButton("Insta Pickup", 270)
+
+local function toggleButton(btn, state)
+    btn.Text = btn.Text:gsub(": %a+", state and ": ON" or ": OFF")
+    btn.BackgroundColor3 = state and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 255, 255)
+end
 
 duelButton.MouseButton1Click:Connect(function()
     autoDuel = not autoDuel
-    duelButton.Text = autoDuel and "Auto Duel: ON" or "Auto Duel: OFF"
-    duelButton.BackgroundColor3 = autoDuel and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
+    toggleButton(duelButton, autoDuel)
 end)
 
 hitButton.MouseButton1Click:Connect(function()
     autoHit = not autoHit
-    hitButton.Text = autoHit and "Auto Hit: ON" or "Auto Hit: OFF"
-    hitButton.BackgroundColor3 = autoHit and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
+    toggleButton(hitButton, autoHit)
 end)
+
+leftButton.MouseButton1Click:Connect(function()
+    autoLeft = not autoLeft
+    if autoLeft then autoRight = false toggleButton(rightButton, false) end
+    toggleButton(leftButton, autoLeft)
+end)
+
+rightButton.MouseButton1Click:Connect(function()
+    autoRight = not autoRight
+    if autoRight then autoLeft = false toggleButton(leftButton, false) end
+    toggleButton(rightButton, autoRight)
+end)
+
+batButton.MouseButton1Click:Connect(function()
+    autoBat = not autoBat
+    toggleButton(batButton, autoBat)
+end)
+
+pickupButton.MouseButton1Click:Connect(function()
+    instaPickup = not instaPickup
+    toggleButton(pickupButton, instaPickup)
+end)
+
+local function getClosestEnemy()
+    local closest = nil
+    local closestDist = math.huge
+    character = player.Character
+    if not character then return end
+    local myRoot = character:FindFirstChild("HumanoidRootPart")
+    if not myRoot then return end
+
+    for _, otherPlayer in pairs(Players:GetPlayers()) do
+        if otherPlayer ~= player then
+            local otherCharacter = otherPlayer.Character
+            if otherCharacter then
+                local rootPart = otherCharacter:FindFirstChild("HumanoidRootPart")
+                local humanoid = otherCharacter:FindFirstChild("Humanoid")
+                if rootPart and humanoid and humanoid.Health > 0 then
+                    local dist = (myRoot.Position - rootPart.Position).Magnitude
+                    if dist < closestDist then
+                        closestDist = dist
+                        closest = otherCharacter
+                    end
+                end
+            end
+        end
+    end
+    return closest
+end
 
 RunService.Heartbeat:Connect(function()
     character = player.Character
     if not character then return end
     local myRoot = character:FindFirstChild("HumanoidRootPart")
-    if not myRoot then return end
+    local humanoid = character:FindFirstChild("Humanoid")
+    if not myRoot or not humanoid then return end
+
+    humanoid.WalkSpeed = speed
+
+    if autoLeft then
+        myRoot.CFrame = myRoot.CFrame * CFrame.new(-1, 0, 0)
+    end
+
+    if autoRight then
+        myRoot.CFrame = myRoot.CFrame * CFrame.new(1, 0, 0)
+    end
+
+    if autoBat then
+        local enemy = getClosestEnemy()
+        if enemy then
+            local enemyRoot = enemy:FindFirstChild("HumanoidRootPart")
+            if enemyRoot then
+                local distance = (myRoot.Position - enemyRoot.Position).Magnitude
+                if distance > 5 then
+                    humanoid.WalkSpeed = 25
+                    humanoid:MoveTo(enemyRoot.Position)
+                else
+                    humanoid.WalkSpeed = speed
+                    local tool = character:FindFirstChildWhichIsA("Tool")
+                    if tool then
+                        tool:Activate()
+                    end
+                end
+            end
+        end
+    end
 
     if autoDuel or autoHit then
         for _, otherPlayer in pairs(Players:GetPlayers()) do
@@ -72,6 +207,29 @@ RunService.Heartbeat:Connect(function()
                             if tool then
                                 tool:Activate()
                             end
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    if instaPickup then
+        for _, item in pairs(workspace:GetDescendants()) do
+            if item:IsA("RemoteEvent") and item.Name:lower():find("pick") then
+                item:FireServer()
+            end
+        end
+
+        for _, item in pairs(workspace:GetChildren()) do
+            if item:IsA("Model") and item ~= character then
+                local rootPart = item:FindFirstChild("HumanoidRootPart") or item:FindFirstChildWhichIsA("BasePart")
+                if rootPart then
+                    local distance = (myRoot.Position - rootPart.Position).Magnitude
+                    if distance < 10 then
+                        local pickupRemote = item:FindFirstChild("PickUp") or item:FindFirstChild("Pickup") or item:FindFirstChild("Collect")
+                        if pickupRemote and pickupRemote:IsA("RemoteEvent") then
+                            pickupRemote:FireServer()
                         end
                     end
                 end
