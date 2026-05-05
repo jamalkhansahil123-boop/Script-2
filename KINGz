@@ -1,4 +1,4 @@
-    _G.KINGzHUB = {}
+    _G.KINGzHUB= {}
     local C = _G.KINGzHUB
 
     -- Services
